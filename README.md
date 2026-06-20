@@ -49,6 +49,71 @@ cp .env.example .env
 | `PINECONE_CLOUD`     | Облако (по умолчанию `aws`)       |
 | `PINECONE_REGION`    | Регион (по умолчанию `us-east-1`) |
 
+## Примеры использования
+
+Ниже — реальные сессии работы с CLI. Данные для индексации
+взяты из `data/canon-nikon-phrases.txt` (102 фразы про Canon и Nikon).
+
+### Индексация файла
+
+```bash
+python -m pinecone_cli index \
+  --name demo-index \
+  --file data/canon-nikon-phrases.txt
+```
+
+![Индексация документов в Pinecone](docs/pinecone-index.png)
+
+### Поиск: совместимость байонетов
+
+```bash
+python -m pinecone_cli search \
+  --name demo-index \
+  --query "Совместимы ли байонеты CANON и NIKON?"
+```
+
+![Поиск: совместимость байонетов Canon и Nikon](docs/pinecone-1.png)
+
+### Поиск: история байонета EF
+
+```bash
+python -m pinecone_cli search \
+  --name demo-index \
+  --query "Когда был представлен байонет EF?"
+```
+
+![Поиск: когда представлен байонет Canon EF](docs/pinecone-2.png)
+
+### Поиск: сравнение матриц
+
+```bash
+python -m pinecone_cli search \
+  --name demo-index \
+  --query "У кого матрица больше, у CANON или NIKON?"
+```
+
+![Поиск: сравнение матриц Canon и Nikon](docs/pinecone-3.png)
+
+### Поиск: беззеркальные системы
+
+```bash
+python -m pinecone_cli search \
+  --name demo-index \
+  --query "Что такое беззеркальная система фотокамеры?"
+```
+
+![Поиск: беззеркальные системы камер](docs/pinecone-4.png)
+
+### Поиск: продукция Nikon
+
+```bash
+python -m pinecone_cli search \
+  --name demo-index \
+  --query "Что еще выпускала NIKON кроме фотокамер?"
+```
+
+![Поиск: продукция Nikon помимо фотоаппаратов](docs/pinecone-5.png)
+
 ## Использование
 
 ### Индексация
@@ -129,6 +194,7 @@ pinecone_cli/
   services.py        # оркестрация index / search
   cli.py             # команды CLI
 data/                # примеры данных
+docs/                # скриншоты примеров использования
 etc/                 # sample-файлы и заметки
 ```
 
