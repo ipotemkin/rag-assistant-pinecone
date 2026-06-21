@@ -7,6 +7,7 @@ from pathlib import Path
 
 import click
 
+from lang_chain.chat import ChatService, build_chat_service, is_exit_command
 from lang_chain.config import load_settings
 from lang_chain.services import build_index_service, build_search_service
 
@@ -121,6 +122,69 @@ def search_command(
         click.echo(f"{rank}. score={result.score:.4f}")
         click.echo(f"   id={result.vector_id}")
         click.echo(f"   text={result.text}")
+
+
+@cli.command("chat")
+@click.option(
+    "--name",
+    "index_name",
+    required=True,
+    help="Pinecone index name.",
+)
+@click.option(
+    "--top-k",
+    default=5,
+    show_default=True,
+    help="Number of context documents to retrieve.",
+)
+@click.option(
+    "--namespace",
+    default="",
+    show_default=True,
+    help="Optional Pinecone namespace.",
+)
+def chat_command(
+    index_name: str,
+    top_k: int,
+    namespace: str,
+) -> None:
+    """Ask questions in an interactive RAG dialog."""
+    try:
+        settings = load_settings()
+        service = build_chat_service(
+            settings,
+            index_name=index_name,
+            top_k=top_k,
+            namespace=namespace,
+        )
+    except ValueError as error:
+        raise click.ClickException(str(error)) from error
+
+    click.echo(
+        f"Chat with index '{index_name}'. "
+        "Type 'exit' or 'quit' to leave."
+    )
+    _run_chat_loop(service)
+
+
+def _run_chat_loop(service: ChatService) -> None:
+    while True:
+        try:
+            question = click.prompt("You", prompt_suffix="> ")
+        except (EOFError, KeyboardInterrupt):
+            click.echo("\nBye.")
+            break
+
+        if is_exit_command(question):
+            click.echo("Bye.")
+            break
+
+        try:
+            answer = service.ask(question)
+        except ValueError as error:
+            raise click.ClickException(str(error)) from error
+
+        click.echo(f"Assistant: {answer}\n")
 
 
 def _validate_index_input(

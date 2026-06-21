@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIMENSION = 1536
+CHAT_MODEL = "gpt-4o-mini"
 PROXYAPI_BASE_URL = "https://api.proxyapi.ru/openai/v1"
 TEXT_METADATA_KEY = "text"
 
@@ -21,6 +22,7 @@ class Settings:
     proxyapi_api_key: str
     pinecone_cloud: str
     pinecone_region: str
+    chat_model: str
 
 
 def load_settings() -> Settings:
@@ -31,6 +33,7 @@ def load_settings() -> Settings:
         proxyapi_api_key=_require("PROXYAPI_API_KEY"),
         pinecone_cloud=os.getenv("PINECONE_CLOUD", "aws"),
         pinecone_region=os.getenv("PINECONE_REGION", "us-east-1"),
+        chat_model=os.getenv("CHAT_MODEL", CHAT_MODEL),
     )
 
 

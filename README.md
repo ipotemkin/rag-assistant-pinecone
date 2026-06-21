@@ -10,6 +10,7 @@
 - **index** — создание serverless-индекса (если ещё нет) и загрузка
   документов с эмбеддингами
 - **search** — семантический поиск по индексу
+- **chat** — диалог с RAG: ответы на основе найденных документов
 
 Источник данных: одна строка (`--text`) или файл `.txt` / `.json`
 (`--file`).
@@ -49,6 +50,7 @@ cp .env.example .env
 | `PROXYAPI_API_KEY`   | Ключ ProxyAPI                     |
 | `PINECONE_CLOUD`     | Облако (по умолчанию `aws`)       |
 | `PINECONE_REGION`    | Регион (по умолчанию `us-east-1`) |
+| `CHAT_MODEL`         | LLM для chat (по умолчанию `gpt-4o-mini`) |
 
 ## Примеры использования
 
@@ -161,14 +163,27 @@ python -m lang_chain search \
   --top-k 5
 ```
 
+### Диалог (chat)
+
+Интерактивный режим: вопросы и ответы с учётом контекста из индекса.
+Для выхода введите `exit`, `quit` или нажмите Ctrl+C / Ctrl+D.
+
+```bash
+python -m lang_chain chat \
+  --name cameras \
+  --top-k 5
+```
+
 ### Makefile
 
 ```bash
 make cli-index                          # etc/sample.txt → demo-index
 make cli-search                         # поиск в demo-index
+make cli-chat                           # диалог с demo-index
 
 make cli-index INDEX=cameras            # свой индекс
 make cli-search INDEX=cameras           # поиск в cameras
+make cli-chat INDEX=cameras             # диалог с cameras
 ```
 
 Для индексации `data/canon-nikon-phrases.txt`:
@@ -191,7 +206,9 @@ lang_chain/
   config.py          # настройки из .env
   loaders.py         # загрузка текста и файлов
   embeddings.py      # OpenAIEmbeddings через ProxyAPI
+  llm.py             # ChatOpenAI через ProxyAPI
   store.py           # PineconeVectorStore (LangChain)
+  chat.py            # RAG-диалог
   services.py        # оркестрация index / search
   cli.py             # команды CLI
 data/                # примеры данных
@@ -201,7 +218,7 @@ etc/                 # sample-файлы и заметки
 
 ## Технические детали
 
-- LangChain: `OpenAIEmbeddings`, `PineconeVectorStore`
+- LangChain: `OpenAIEmbeddings`, `ChatOpenAI`, `PineconeVectorStore`
 - Модель эмбеддингов: `text-embedding-3-small` (1536 измерений)
 - ProxyAPI endpoint: `https://api.proxyapi.ru/openai/v1`
 - Метрика индекса: cosine similarity
