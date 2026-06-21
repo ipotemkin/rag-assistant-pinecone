@@ -10,7 +10,8 @@
 - **index** — создание serverless-индекса (если ещё нет) и загрузка
   документов с эмбеддингами
 - **search** — семантический поиск по индексу
-- **chat** — диалог с RAG: ответы на основе найденных документов
+- **chat** — диалог с RAG: ответы на основе найденных документов,
+  tools для поиска в интернете (DuckDuckGo) и курсов валют
 
 Источник данных: одна строка (`--text`) или файл `.txt` / `.json`
 (`--file`).
@@ -170,6 +171,16 @@ python -m lang_chain search \
 (сохраняется в `~/.lang_chain_history`, как в bash).
 Для выхода введите `exit`, `quit` или нажмите Ctrl+C / Ctrl+D.
 
+**Tools в chat:**
+
+| Tool | Когда используется |
+| ---- | ------------------ |
+| `search_internet` | ответа нет в базе знаний — поиск через DuckDuckGo |
+| `get_currency_rate` | вопросы о курсе валют (USD, EUR, RUB и др.) |
+
+Если ответ опирается на интернет, ассистент явно указывает это в тексте
+(и добавляется пометка «данные из интернета (DuckDuckGo)»).
+
 ```bash
 python -m lang_chain chat \
   --name cameras \
@@ -211,6 +222,8 @@ lang_chain/
   llm.py             # ChatOpenAI через ProxyAPI
   store.py           # PineconeVectorStore (LangChain)
   chat.py            # RAG-диалог
+  tool_runner.py     # цикл вызова tools
+  tools/             # DuckDuckGo и курсы валют
   services.py        # оркестрация index / search
   cli.py             # команды CLI
 data/                # примеры данных
@@ -220,7 +233,8 @@ etc/                 # sample-файлы и заметки
 
 ## Технические детали
 
-- LangChain: `OpenAIEmbeddings`, `ChatOpenAI`, `PineconeVectorStore`
+- LangChain: `OpenAIEmbeddings`, `ChatOpenAI`, `PineconeVectorStore`, tools
+- Tools: DuckDuckGo (`ddgs`), курсы валют (`open.er-api.com`)
 - Модель эмбеддингов: `text-embedding-3-small` (1536 измерений)
 - ProxyAPI endpoint: `https://api.proxyapi.ru/openai/v1`
 - Метрика индекса: cosine similarity

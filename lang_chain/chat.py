@@ -9,20 +9,31 @@ from langchain_openai import ChatOpenAI
 from lang_chain.config import Settings
 from lang_chain.llm import build_chat_model
 from lang_chain.store import LangChainPineconeStore
+from lang_chain.tool_runner import run_with_tools
+from lang_chain.tools import CHAT_TOOLS
 
 MAX_HISTORY_TURNS = 5
 EXIT_COMMANDS = frozenset({"exit", "quit", "/exit", "/quit"})
 
-SYSTEM_PROMPT = """You are a helpful assistant. Answer using the context below.
-If the context is insufficient, say so honestly.
-Reply in the same language as the user's question.
+SYSTEM_PROMPT = """You are a helpful assistant with a knowledge base and tools.
 
-Context:
-{context}"""
+Knowledge base context (prefer this when it is sufficient):
+{context}
+
+Tools:
+- search_internet: search DuckDuckGo when the knowledge base lacks the answer
+- get_currency_rate: get exchange rates between currency codes
+
+Rules:
+- Reply in the same language as the user's question.
+- Prefer the knowledge base; use search_internet only when it is insufficient.
+- If you use search_internet, clearly say that internet sources (DuckDuckGo) were used.
+- Call search_internet at most once per user question.
+- Use get_currency_rate for currency exchange questions."""
 
 
 class ChatService:
-    """Answer questions with retrieval-augmented generation."""
+    """Answer questions with retrieval-augmented generation and tools."""
 
     def __init__(
         self,
@@ -40,11 +51,10 @@ class ChatService:
         self._history: list[BaseMessage] = []
 
     def ask(self, question: str) -> str:
-        """Retrieve context, call the LLM, and update dialog history."""
+        """Retrieve context, call tools if needed, update dialog history."""
         context = self._build_context(question)
         messages = self._build_messages(context, question)
-        response = self._llm.invoke(messages)
-        answer = str(response.content)
+        answer, _ = run_with_tools(self._llm, CHAT_TOOLS, messages)
         self._append_history(question, answer)
         return answer
 
@@ -57,7 +67,9 @@ class ChatService:
         )
         if not results:
             return "No relevant documents found."
-        return "\n".join(f"- {item.text}" for item in results)
+        return "\n".join(
+            f"- [score={item.score:.4f}] {item.text}" for item in results
+        )
 
     def _build_messages(
         self,
