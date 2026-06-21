@@ -1,20 +1,22 @@
 # LangChain Example CLI
 
-Простой CLI-сервис на Python для тестирования работы с векторной БД
-[Pinecone](https://www.pinecone.io/) через
-[LangChain](https://www.langchain.com/). Эмбеддинги создаются через
-[ProxyAPI](https://proxyapi.ru/) с моделью OpenAI `text-embedding-3-small`.
+CLI на Python для работы с векторной базой [Pinecone](https://www.pinecone.io/)
+через [LangChain](https://www.langchain.com/). Поддерживает индексацию
+документов, семантический поиск и интерактивный RAG-чат с tools.
+
+Эмбеддинги и LLM вызываются через [ProxyAPI](https://proxyapi.ru/) (OpenAI-
+совместимый API).
 
 ## Возможности
 
-- **index** — создание serverless-индекса (если ещё нет) и загрузка
-  документов с эмбеддингами
-- **search** — семантический поиск по индексу
-- **chat** — диалог с RAG: ответы на основе найденных документов,
-  tools для поиска в интернете (DuckDuckGo) и курсов валют
+| Команда   | Описание |
+| --------- | -------- |
+| `index`   | Создание serverless-индекса (если ещё нет) и загрузка документов |
+| `search`  | Семантический поиск по индексу |
+| `chat`    | Диалог с RAG, tools и историей ввода |
 
-Источник данных: одна строка (`--text`) или файл `.txt` / `.json`
-(`--file`).
+Источник данных для `index`: одна строка (`--text`) или файл `.txt` /
+`.json` (`--file`).
 
 ## Требования
 
@@ -39,84 +41,34 @@ make install
 
 ## Настройка
 
-Скопируйте шаблон и заполните ключи:
-
 ```bash
 cp .env.example .env
 ```
 
-| Переменная           | Описание                          |
-| -------------------- | --------------------------------- |
-| `PINECONE_API_KEY`   | Ключ Pinecone                     |
-| `PROXYAPI_API_KEY`   | Ключ ProxyAPI                     |
-| `PINECONE_CLOUD`     | Облако (по умолчанию `aws`)       |
-| `PINECONE_REGION`    | Регион (по умолчанию `us-east-1`) |
-| `CHAT_MODEL`         | LLM для chat (по умолчанию `gpt-4o-mini`) |
+| Переменная         | Описание |
+| ------------------ | -------- |
+| `PINECONE_API_KEY` | Ключ Pinecone |
+| `PROXYAPI_API_KEY` | Ключ ProxyAPI |
+| `PINECONE_CLOUD`   | Облако (по умолчанию `aws`) |
+| `PINECONE_REGION`  | Регион (по умолчанию `us-east-1`) |
+| `CHAT_MODEL`       | LLM для chat (по умолчанию `gpt-4o-mini`) |
 
-## Примеры использования
-
-Ниже — реальные сессии работы с CLI. Данные для индексации
-взяты из `data/canon-nikon-phrases.txt` (102 фразы про Canon и Nikon).
-
-### Индексация файла
+## Быстрый старт
 
 ```bash
+# 1. Индексация
 python -m lang_chain index \
   --name demo-index \
   --file data/canon-nikon-phrases.txt
-```
 
-![Индексация документов в Pinecone](docs/pinecone-index.png)
-
-### Поиск: совместимость байонетов
-
-```bash
+# 2. Поиск
 python -m lang_chain search \
   --name demo-index \
   --query "Совместимы ли байонеты CANON и NIKON?"
+
+# 3. Диалог
+python -m lang_chain chat --name demo-index
 ```
-
-![Поиск: совместимость байонетов Canon и Nikon](docs/pinecone-1.png)
-
-### Поиск: история байонета EF
-
-```bash
-python -m lang_chain search \
-  --name demo-index \
-  --query "Когда был представлен байонет EF?"
-```
-
-![Поиск: когда представлен байонет Canon EF](docs/pinecone-2.png)
-
-### Поиск: сравнение матриц
-
-```bash
-python -m lang_chain search \
-  --name demo-index \
-  --query "У кого матрица больше, у CANON или NIKON?"
-```
-
-![Поиск: сравнение матриц Canon и Nikon](docs/pinecone-3.png)
-
-### Поиск: беззеркальные системы
-
-```bash
-python -m lang_chain search \
-  --name demo-index \
-  --query "Что такое беззеркальная система фотокамеры?"
-```
-
-![Поиск: беззеркальные системы камер](docs/pinecone-4.png)
-
-### Поиск: продукция Nikon
-
-```bash
-python -m lang_chain search \
-  --name demo-index \
-  --query "Что еще выпускала NIKON кроме фотокамер?"
-```
-
-![Поиск: продукция Nikon помимо фотоаппаратов](docs/pinecone-5.png)
 
 ## Использование
 
@@ -130,7 +82,7 @@ python -m lang_chain index \
   --text "Canon выпускает зеркальные и беззеркальные камеры"
 ```
 
-Из текстового файла (одна строка — один документ, пустые пропускаются):
+Из `.txt` (одна строка — один документ, пустые пропускаются):
 
 ```bash
 python -m lang_chain index \
@@ -138,7 +90,7 @@ python -m lang_chain index \
   --file data/canon-nikon-phrases.txt
 ```
 
-Из JSON (массив строк или объектов с полем `text` / `content`):
+Из `.json` (массив строк или объектов с полем `text` / `content`):
 
 ```bash
 python -m lang_chain index \
@@ -146,7 +98,7 @@ python -m lang_chain index \
   --file etc/sample.json
 ```
 
-Опционально — namespace:
+С namespace:
 
 ```bash
 python -m lang_chain index \
@@ -166,17 +118,16 @@ python -m lang_chain search \
 
 ### Диалог (chat)
 
-Интерактивный режим: вопросы и ответы с учётом контекста из индекса.
-Строку ввода можно редактировать (←/→), история запросов — стрелками ↑/↓
-(сохраняется в `~/.lang_chain_history`, как в bash).
-Для выхода введите `exit`, `quit` или нажмите Ctrl+C / Ctrl+D.
+Интерактивный RAG-чат: ответы строятся по документам из индекса. Строку
+ввода можно редактировать (←/→), история запросов — стрелками ↑/↓
+(файл `~/.lang_chain_history`). Выход: `exit`, `quit`, Ctrl+C или Ctrl+D.
 
 **Tools в chat:**
 
 | Tool | Когда используется |
 | ---- | ------------------ |
-| `search_internet` | ответа нет в базе знаний — поиск через DuckDuckGo |
-| `get_currency_rate` | вопросы о курсе валют (USD, EUR, RUB и др.) |
+| `search_internet` | Ответа нет в базе знаний — поиск через DuckDuckGo |
+| `get_currency_rate` | Вопросы о курсе валют (USD, EUR, RUB и др.) |
 
 Если ответ опирается на интернет, ассистент явно указывает это в тексте
 (и добавляется пометка «данные из интернета (DuckDuckGo)»).
@@ -194,48 +145,138 @@ make cli-index                          # etc/sample.txt → demo-index
 make cli-search                         # поиск в demo-index
 make cli-chat                           # диалог с demo-index
 
-make cli-index INDEX=cameras            # свой индекс
-make cli-search INDEX=cameras           # поиск в cameras
-make cli-chat INDEX=cameras             # диалог с cameras
+make cli-index INDEX=cameras
+make cli-search INDEX=cameras
+make cli-chat INDEX=cameras
 ```
 
-Для индексации `data/canon-nikon-phrases.txt`:
+## Примеры с скриншотами
+
+Данные: `data/canon-nikon-phrases.txt` (102 фразы про Canon и Nikon).
+
+### Индексация
 
 ```bash
 python -m lang_chain index \
-  --name cameras \
+  --name demo-index \
   --file data/canon-nikon-phrases.txt
-
-python -m lang_chain search \
-  --name cameras \
-  --query "история Nikon" \
-  --top-k 3
 ```
+
+![Индексация документов в Pinecone](docs/pinecone-index.png)
+
+### Поиск
+
+```bash
+python -m lang_chain search \
+  --name demo-index \
+  --query "Совместимы ли байонеты CANON и NIKON?"
+```
+
+![Поиск: совместимость байонетов Canon и Nikon](docs/pinecone-1.png)
+
+```bash
+python -m lang_chain search \
+  --name demo-index \
+  --query "Когда был представлен байонет EF?"
+```
+
+![Поиск: когда представлен байонет Canon EF](docs/pinecone-2.png)
+
+```bash
+python -m lang_chain search \
+  --name demo-index \
+  --query "У кого матрица больше, у CANON или NIKON?"
+```
+
+![Поиск: сравнение матриц Canon и Nikon](docs/pinecone-3.png)
+
+```bash
+python -m lang_chain search \
+  --name demo-index \
+  --query "Что такое беззеркальная система фотокамеры?"
+```
+
+![Поиск: беззеркальные системы камер](docs/pinecone-4.png)
+
+```bash
+python -m lang_chain search \
+  --name demo-index \
+  --query "Что еще выпускала NIKON кроме фотокамер?"
+```
+
+![Поиск: продукция Nikon помимо фотоаппаратов](docs/pinecone-5.png)
 
 ## Структура проекта
 
 ```
 lang_chain/
+  cli.py             # команды index, search, chat
   config.py          # настройки из .env
-  loaders.py         # загрузка текста и файлов
+  console.py         # readline: редактирование строки и история ввода
+  loaders.py         # загрузка .txt / .json
   embeddings.py      # OpenAIEmbeddings через ProxyAPI
   llm.py             # ChatOpenAI через ProxyAPI
-  store.py           # PineconeVectorStore (LangChain)
-  chat.py            # RAG-диалог
-  tool_runner.py     # цикл вызова tools
-  tools/             # DuckDuckGo и курсы валют
+  store.py           # PineconeVectorStore, создание индекса
   services.py        # оркестрация index / search
-  cli.py             # команды CLI
+  chat.py            # RAG-диалог
+  tool_runner.py     # цикл вызова LangChain tools
+  tools/
+    web_search.py    # DuckDuckGo (ddgs)
+    currency.py      # курсы валют (open.er-api.com)
 data/                # примеры данных
-docs/                # скриншоты примеров использования
-etc/                 # sample-файлы и заметки
+docs/                # скриншоты
+etc/                 # sample-файлы
 ```
 
-## Технические детали
+## Технологии
 
-- LangChain: `OpenAIEmbeddings`, `ChatOpenAI`, `PineconeVectorStore`, tools
-- Tools: DuckDuckGo (`ddgs`), курсы валют (`open.er-api.com`)
-- Модель эмбеддингов: `text-embedding-3-small` (1536 измерений)
-- ProxyAPI endpoint: `https://api.proxyapi.ru/openai/v1`
-- Метрика индекса: cosine similarity
-- Тип индекса: Pinecone serverless
+Краткий обзор стека, используемого в CLI.
+
+### Python и CLI
+
+| Технология | Роль в проекте |
+| ---------- | -------------- |
+| **Python 3.11+** | Язык и среда выполнения |
+| **Click** | Парсинг аргументов, подкоманды (`index`, `search`, `chat`), `--help` |
+| **readline** (stdlib) | Редактирование строки в chat, история ↑/↓, файл `~/.lang_chain_history` |
+| **python-dotenv** | Загрузка ключей и настроек из `.env` |
+| **Makefile** | Шорткаты `make cli-index`, `cli-search`, `cli-chat` |
+
+### LangChain
+
+| Компонент | Роль в проекте |
+| --------- | -------------- |
+| **langchain-core** | Сообщения, `@tool`, tool calling, базовые абстракции |
+| **langchain-openai** | `OpenAIEmbeddings`, `ChatOpenAI` |
+| **langchain-pinecone** | `PineconeVectorStore` — upsert и similarity search |
+| **RAG** | В `chat`: retrieval из Pinecone → контекст → ответ LLM |
+| **Tool calling** | LLM вызывает `search_internet` и `get_currency_rate` по необходимости |
+
+### Модели и API
+
+| Технология | Роль в проекте |
+| ---------- | -------------- |
+| **ProxyAPI** | Прокси к OpenAI API (`https://api.proxyapi.ru/openai/v1`) |
+| **text-embedding-3-small** | Эмбеддинги, 1536 измерений (`index`, `search`, `chat`) |
+| **gpt-4o-mini** (по умолчанию) | LLM для `chat`, настраивается через `CHAT_MODEL` |
+
+### Векторная база
+
+| Технология | Роль в проекте |
+| ---------- | -------------- |
+| **Pinecone** | Serverless vector index, метрика cosine similarity |
+| **pinecone** (SDK) | Создание индекса, upsert, query через LangChain-обёртку |
+
+### Tools (chat)
+
+| Технология | Роль в проекте |
+| ---------- | -------------- |
+| **ddgs** | Поиск в интернете через DuckDuckGo, если ответа нет в базе |
+| **open.er-api.com** | Актуальные курсы валют (без API-ключа), tool `get_currency_rate` |
+| **urllib** (stdlib) | HTTP-запросы к API курсов валют |
+
+### Параметры индекса
+
+- **Модель эмбеддингов:** `text-embedding-3-small` (1536 dim)
+- **Метрика:** cosine similarity
+- **Тип индекса:** Pinecone serverless (`PINECONE_CLOUD`, `PINECONE_REGION`)
