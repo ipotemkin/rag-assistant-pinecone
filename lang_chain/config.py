@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIMENSION = 1536
 PROXYAPI_BASE_URL = "https://api.proxyapi.ru/openai/v1"
+TEXT_METADATA_KEY = "text"
 
 
 @dataclass(frozen=True)

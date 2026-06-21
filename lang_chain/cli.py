@@ -1,4 +1,4 @@
-"""Command-line interface for Pinecone testing."""
+"""Command-line interface for LangChain + Pinecone testing."""
 
 from __future__ import annotations
 
@@ -7,13 +7,13 @@ from pathlib import Path
 
 import click
 
-from pinecone_cli.config import load_settings
-from pinecone_cli.services import build_index_service, build_search_service
+from lang_chain.config import load_settings
+from lang_chain.services import build_index_service, build_search_service
 
 
 @click.group()
 def cli() -> None:
-    """CLI for indexing and searching Pinecone embeddings."""
+    """CLI for indexing and searching Pinecone via LangChain."""
 
 
 @cli.command("index")
@@ -136,7 +136,7 @@ def _validate_index_input(
 def main() -> None:
     """CLI entry point."""
     try:
-        cli(prog_name="pinecone-cli")
+        cli(prog_name="lang-chain")
     except click.ClickException as error:
         click.echo(f"Error: {error.message}", err=True)
         sys.exit(1)

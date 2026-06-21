@@ -5,7 +5,7 @@ VENV_PYTHON := $(VENV)/bin/python
 .PHONY: venv install refresh doctor clean-wheelhouse clean-venv reinstall \
 	cli-index cli-search
 
-CLI := $(VENV_PYTHON) -m pinecone_cli
+CLI := $(VENV_PYTHON) -m lang_chain
 INDEX ?= demo-index
 
 venv:

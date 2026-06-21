@@ -1,7 +1,8 @@
-# Pinecone Example CLI
+# LangChain Example CLI
 
 Простой CLI-сервис на Python для тестирования работы с векторной БД
-[Pinecone](https://www.pinecone.io/). Эмбеддинги создаются через
+[Pinecone](https://www.pinecone.io/) через
+[LangChain](https://www.langchain.com/). Эмбеддинги создаются через
 [ProxyAPI](https://proxyapi.ru/) с моделью OpenAI `text-embedding-3-small`.
 
 ## Возможности
@@ -57,7 +58,7 @@ cp .env.example .env
 ### Индексация файла
 
 ```bash
-python -m pinecone_cli index \
+python -m lang_chain index \
   --name demo-index \
   --file data/canon-nikon-phrases.txt
 ```
@@ -67,7 +68,7 @@ python -m pinecone_cli index \
 ### Поиск: совместимость байонетов
 
 ```bash
-python -m pinecone_cli search \
+python -m lang_chain search \
   --name demo-index \
   --query "Совместимы ли байонеты CANON и NIKON?"
 ```
@@ -77,7 +78,7 @@ python -m pinecone_cli search \
 ### Поиск: история байонета EF
 
 ```bash
-python -m pinecone_cli search \
+python -m lang_chain search \
   --name demo-index \
   --query "Когда был представлен байонет EF?"
 ```
@@ -87,7 +88,7 @@ python -m pinecone_cli search \
 ### Поиск: сравнение матриц
 
 ```bash
-python -m pinecone_cli search \
+python -m lang_chain search \
   --name demo-index \
   --query "У кого матрица больше, у CANON или NIKON?"
 ```
@@ -97,7 +98,7 @@ python -m pinecone_cli search \
 ### Поиск: беззеркальные системы
 
 ```bash
-python -m pinecone_cli search \
+python -m lang_chain search \
   --name demo-index \
   --query "Что такое беззеркальная система фотокамеры?"
 ```
@@ -107,7 +108,7 @@ python -m pinecone_cli search \
 ### Поиск: продукция Nikon
 
 ```bash
-python -m pinecone_cli search \
+python -m lang_chain search \
   --name demo-index \
   --query "Что еще выпускала NIKON кроме фотокамер?"
 ```
@@ -121,7 +122,7 @@ python -m pinecone_cli search \
 Одна строка:
 
 ```bash
-python -m pinecone_cli index \
+python -m lang_chain index \
   --name demo-index \
   --text "Canon выпускает зеркальные и беззеркальные камеры"
 ```
@@ -129,7 +130,7 @@ python -m pinecone_cli index \
 Из текстового файла (одна строка — один документ, пустые пропускаются):
 
 ```bash
-python -m pinecone_cli index \
+python -m lang_chain index \
   --name cameras \
   --file data/canon-nikon-phrases.txt
 ```
@@ -137,7 +138,7 @@ python -m pinecone_cli index \
 Из JSON (массив строк или объектов с полем `text` / `content`):
 
 ```bash
-python -m pinecone_cli index \
+python -m lang_chain index \
   --name demo-index \
   --file etc/sample.json
 ```
@@ -145,7 +146,7 @@ python -m pinecone_cli index \
 Опционально — namespace:
 
 ```bash
-python -m pinecone_cli index \
+python -m lang_chain index \
   --name demo-index \
   --file etc/sample.txt \
   --namespace my-ns
@@ -154,7 +155,7 @@ python -m pinecone_cli index \
 ### Поиск
 
 ```bash
-python -m pinecone_cli search \
+python -m lang_chain search \
   --name cameras \
   --query "когда основана компания Canon" \
   --top-k 5
@@ -173,11 +174,11 @@ make cli-search INDEX=cameras           # поиск в cameras
 Для индексации `data/canon-nikon-phrases.txt`:
 
 ```bash
-python -m pinecone_cli index \
+python -m lang_chain index \
   --name cameras \
   --file data/canon-nikon-phrases.txt
 
-python -m pinecone_cli search \
+python -m lang_chain search \
   --name cameras \
   --query "история Nikon" \
   --top-k 3
@@ -186,11 +187,11 @@ python -m pinecone_cli search \
 ## Структура проекта
 
 ```
-pinecone_cli/
+lang_chain/
   config.py          # настройки из .env
   loaders.py         # загрузка текста и файлов
-  embedding.py       # эмбеддинги через ProxyAPI
-  pinecone_store.py  # операции с Pinecone
+  embeddings.py      # OpenAIEmbeddings через ProxyAPI
+  store.py           # PineconeVectorStore (LangChain)
   services.py        # оркестрация index / search
   cli.py             # команды CLI
 data/                # примеры данных
@@ -200,6 +201,7 @@ etc/                 # sample-файлы и заметки
 
 ## Технические детали
 
+- LangChain: `OpenAIEmbeddings`, `PineconeVectorStore`
 - Модель эмбеддингов: `text-embedding-3-small` (1536 измерений)
 - ProxyAPI endpoint: `https://api.proxyapi.ru/openai/v1`
 - Метрика индекса: cosine similarity

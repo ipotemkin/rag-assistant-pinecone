@@ -1,1 +1,0 @@
-"""Pinecone CLI example package."""
