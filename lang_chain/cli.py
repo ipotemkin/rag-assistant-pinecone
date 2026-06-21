@@ -9,6 +9,7 @@ import click
 
 from lang_chain.chat import ChatService, build_chat_service, is_exit_command
 from lang_chain.config import load_settings
+from lang_chain.console import ConsoleReader
 from lang_chain.services import build_index_service, build_search_service
 
 
@@ -168,15 +169,22 @@ def chat_command(
 
 
 def _run_chat_loop(service: ChatService) -> None:
+    reader = ConsoleReader()
     while True:
         try:
-            question = click.prompt("You", prompt_suffix="> ")
+            question = reader.read_line("You> ")
         except (EOFError, KeyboardInterrupt):
             click.echo("\nBye.")
+            reader.save_history()
             break
+
+        if not question.strip():
+            reader.drop_last_history_entry()
+            continue
 
         if is_exit_command(question):
             click.echo("Bye.")
+            reader.save_history()
             break
 
         try:
