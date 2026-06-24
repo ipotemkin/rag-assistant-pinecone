@@ -1,4 +1,4 @@
-# LangChain Example CLI
+# RAG-ассистент CLI (LangChain + Pinecone)
 
 CLI на Python для работы с векторной базой [Pinecone](https://www.pinecone.io/)
 через [LangChain](https://www.langchain.com/). Поддерживает индексацию
