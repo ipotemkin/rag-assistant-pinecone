@@ -3,7 +3,7 @@ VENV ?= .venv
 VENV_PYTHON := $(VENV)/bin/python
 
 .PHONY: venv install refresh doctor clean-wheelhouse clean-venv reinstall \
-	cli-index cli-search cli-chat
+	cli-index cli-index-url cli-search cli-chat
 
 CLI := $(VENV_PYTHON) -m lang_chain
 INDEX ?= demo-index
@@ -38,6 +38,9 @@ reinstall: clean-venv venv install
 
 cli-index:
 	$(CLI) index --name $(INDEX) --file etc/sample.txt
+
+cli-index-url:
+	$(CLI) index-url --name $(INDEX) --url https://example.com
 
 cli-search:
 	$(CLI) search --name $(INDEX) --query "векторная база данных"

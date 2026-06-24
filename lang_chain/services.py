@@ -7,6 +7,7 @@ from pathlib import Path
 from lang_chain.config import Settings
 from lang_chain.loaders import DocumentLoader
 from lang_chain.store import LangChainPineconeStore, SearchResult
+from lang_chain.url_loader import UrlDocumentLoader
 
 
 class IndexService:
@@ -16,9 +17,11 @@ class IndexService:
         self,
         store: LangChainPineconeStore,
         loader: DocumentLoader,
+        url_loader: UrlDocumentLoader | None = None,
     ) -> None:
         self._store = store
         self._loader = loader
+        self._url_loader = url_loader or UrlDocumentLoader()
 
     def index_from_text(
         self,
@@ -36,6 +39,15 @@ class IndexService:
         namespace: str = "",
     ) -> int:
         documents = self._loader.from_file(file_path)
+        return self._index_documents(index_name, documents, namespace)
+
+    def index_from_url(
+        self,
+        index_name: str,
+        url: str,
+        namespace: str = "",
+    ) -> int:
+        documents = self._url_loader.from_url(url)
         return self._index_documents(index_name, documents, namespace)
 
     def _index_documents(
@@ -72,11 +84,15 @@ class SearchService:
         )
 
 
-def build_index_service(settings: Settings) -> IndexService:
+def build_index_service(
+    settings: Settings,
+    url_loader: UrlDocumentLoader | None = None,
+) -> IndexService:
     """Factory for index operations."""
     return IndexService(
         store=LangChainPineconeStore(settings),
         loader=DocumentLoader(),
+        url_loader=url_loader,
     )
 
 

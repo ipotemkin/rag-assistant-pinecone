@@ -2,21 +2,24 @@
 
 CLI на Python для работы с векторной базой [Pinecone](https://www.pinecone.io/)
 через [LangChain](https://www.langchain.com/). Поддерживает индексацию
-документов, семантический поиск и интерактивный RAG-чат с tools.
+документов и веб-страниц по URL, семантический поиск и интерактивный
+RAG-чат с tools.
 
 Эмбеддинги и LLM вызываются через [ProxyAPI](https://proxyapi.ru/) (OpenAI-
 совместимый API).
 
 ## Возможности
 
-| Команда   | Описание |
-| --------- | -------- |
-| `index`   | Создание serverless-индекса (если ещё нет) и загрузка документов |
-| `search`  | Семантический поиск по индексу |
-| `chat`    | Диалог с RAG, tools и историей ввода |
+| Команда     | Описание |
+| ----------- | -------- |
+| `index`     | Создание serverless-индекса (если ещё нет) и загрузка документов |
+| `index-url` | Загрузка веб-страницы по URL, разбиение на чанки и индексация |
+| `search`    | Семантический поиск по индексу |
+| `chat`      | Диалог с RAG, tools и историей ввода |
 
 Источник данных для `index`: одна строка (`--text`) или файл `.txt` /
-`.json` (`--file`).
+`.json` (`--file`). Команда `index-url` принимает адрес веб-страницы
+(`--url`).
 
 ## Требования
 
@@ -107,6 +110,39 @@ python -m lang_chain index \
   --namespace my-ns
 ```
 
+### Индексация URL
+
+Команда `index-url` загружает HTML-страницу, извлекает текст,
+разбивает его на чанки и векторизует в Pinecone. После этого
+содержимое страницы доступно в `search` и `chat` наравне с
+документами из `index`.
+
+```bash
+python -m lang_chain index-url \
+  --name demo-index \
+  --url https://ru.wikipedia.org/wiki/Марс
+```
+
+Параметры чанкирования (по умолчанию: размер 1000 символов,
+перекрытие 200):
+
+```bash
+python -m lang_chain index-url \
+  --name demo-index \
+  --url https://ru.wikipedia.org/wiki/Марс \
+  --chunk-size 1000 \
+  --chunk-overlap 200
+```
+
+С namespace:
+
+```bash
+python -m lang_chain index-url \
+  --name demo-index \
+  --url https://example.com \
+  --namespace web-pages
+```
+
 ### Поиск
 
 ```bash
@@ -142,10 +178,12 @@ python -m lang_chain chat \
 
 ```bash
 make cli-index                          # etc/sample.txt → demo-index
+make cli-index-url                      # example.com → demo-index
 make cli-search                         # поиск в demo-index
 make cli-chat                           # диалог с demo-index
 
 make cli-index INDEX=cameras
+make cli-index-url INDEX=cameras
 make cli-search INDEX=cameras
 make cli-chat INDEX=cameras
 ```
@@ -206,14 +244,38 @@ python -m lang_chain search \
 
 ![Поиск: продукция Nikon помимо фотоаппаратов](docs/pinecone-5.png)
 
+### Индексация URL (Марс)
+
+Источник: статья [«Марс»](https://ru.wikipedia.org/wiki/Марс) в Википедии.
+
+```bash
+python -m lang_chain index-url \
+  --name demo-index \
+  --url https://ru.wikipedia.org/wiki/Марс
+```
+
+![Индексация веб-страницы о Марсе в Pinecone](docs/mars-index.png)
+
+### Диалог по данным с URL
+
+После индексации страницы можно задавать вопросы в `chat` — ответы
+строятся по чанкам из базы знаний:
+
+```bash
+python -m lang_chain chat --name demo-index
+```
+
+![Диалог о Марсе на основе проиндексированной веб-страницы](docs/mars-chat.png)
+
 ## Структура проекта
 
 ```
 lang_chain/
-  cli.py             # команды index, search, chat
+  cli.py             # команды index, index-url, search, chat
   config.py          # настройки из .env
   console.py         # readline: редактирование строки и история ввода
   loaders.py         # загрузка .txt / .json
+  url_loader.py      # загрузка URL, парсинг HTML, чанкирование
   embeddings.py      # OpenAIEmbeddings через ProxyAPI
   llm.py             # ChatOpenAI через ProxyAPI
   store.py           # PineconeVectorStore, создание индекса
@@ -237,10 +299,10 @@ etc/                 # sample-файлы
 | Технология | Роль в проекте |
 | ---------- | -------------- |
 | **Python 3.11+** | Язык и среда выполнения |
-| **Click** | Парсинг аргументов, подкоманды (`index`, `search`, `chat`), `--help` |
+| **Click** | Парсинг аргументов, подкоманды (`index`, `index-url`, `search`, `chat`), `--help` |
 | **readline** (stdlib) | Редактирование строки в chat, история ↑/↓, файл `~/.lang_chain_history` |
 | **python-dotenv** | Загрузка ключей и настроек из `.env` |
-| **Makefile** | Шорткаты `make cli-index`, `cli-search`, `cli-chat` |
+| **Makefile** | Шорткаты `make cli-index`, `cli-index-url`, `cli-search`, `cli-chat` |
 
 ### LangChain
 
@@ -249,6 +311,7 @@ etc/                 # sample-файлы
 | **langchain-core** | Сообщения, `@tool`, tool calling, базовые абстракции |
 | **langchain-openai** | `OpenAIEmbeddings`, `ChatOpenAI` |
 | **langchain-pinecone** | `PineconeVectorStore` — upsert и similarity search |
+| **langchain-text-splitters** | `RecursiveCharacterTextSplitter` — чанкирование текста с URL |
 | **RAG** | В `chat`: retrieval из Pinecone → контекст → ответ LLM |
 | **Tool calling** | LLM вызывает `search_internet` и `get_currency_rate` по необходимости |
 
@@ -266,6 +329,14 @@ etc/                 # sample-файлы
 | ---------- | -------------- |
 | **Pinecone** | Serverless vector index, метрика cosine similarity |
 | **pinecone** (SDK) | Создание индекса, upsert, query через LangChain-обёртку |
+
+### Загрузка веб-страниц (index-url)
+
+| Технология | Роль в проекте |
+| ---------- | -------------- |
+| **httpx** | HTTP-запросы к веб-страницам |
+| **beautifulsoup4** | Парсинг HTML, извлечение текста |
+| **langchain-text-splitters** | Разбиение длинных страниц на чанки |
 
 ### Tools (chat)
 

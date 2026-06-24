@@ -11,6 +11,11 @@ from lang_chain.chat import ChatService, build_chat_service, is_exit_command
 from lang_chain.config import load_settings
 from lang_chain.console import ConsoleReader
 from lang_chain.services import build_index_service, build_search_service
+from lang_chain.url_loader import (
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_CHUNK_SIZE,
+    UrlDocumentLoader,
+)
 
 
 @click.group()
@@ -68,6 +73,63 @@ def index_command(
 
     click.echo(
         f"Indexed {count} document(s) into '{index_name}' "
+        f"(namespace='{namespace or 'default'}')."
+    )
+
+
+@cli.command("index-url")
+@click.option(
+    "--name",
+    "index_name",
+    required=True,
+    help="Pinecone index name.",
+)
+@click.option(
+    "--url",
+    required=True,
+    help="Web page URL to fetch, chunk, and index.",
+)
+@click.option(
+    "--namespace",
+    default="",
+    show_default=True,
+    help="Optional Pinecone namespace.",
+)
+@click.option(
+    "--chunk-size",
+    default=DEFAULT_CHUNK_SIZE,
+    show_default=True,
+    help="Maximum chunk size in characters.",
+)
+@click.option(
+    "--chunk-overlap",
+    default=DEFAULT_CHUNK_OVERLAP,
+    show_default=True,
+    help="Overlap between consecutive chunks.",
+)
+def index_url_command(
+    index_name: str,
+    url: str,
+    namespace: str,
+    chunk_size: int,
+    chunk_overlap: int,
+) -> None:
+    """Fetch a web page, split it into chunks, and upsert embeddings."""
+    try:
+        settings = load_settings()
+        service = build_index_service(
+            settings,
+            url_loader=UrlDocumentLoader(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+            ),
+        )
+        count = service.index_from_url(index_name, url, namespace)
+    except ValueError as error:
+        raise click.ClickException(str(error)) from error
+
+    click.echo(
+        f"Indexed {count} chunk(s) from '{url}' into '{index_name}' "
         f"(namespace='{namespace or 'default'}')."
     )
 
